@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h> 
 #include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
 #include <FS.h>
 
 
@@ -47,6 +48,28 @@ void handleRootPost() {
 }
 
 /**
+ * HTTPリクエスト（GET）
+ */
+void http_get() {
+  HTTPClient http;
+  http.begin("http://weather.livedoor.com/forecast/webservice/json/v1?city=400040");
+  int httpCode = http.GET();
+  if(httpCode) {
+      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+
+      if(httpCode == 200) {
+          String payload = http.getString();
+          Serial.println(payload);
+      }
+  } else {
+      Serial.printf("[HTTP] GET... failed, error: %d\n", httpCode);
+  }
+
+  http.end();
+  delay(5000);
+}
+
+/**
  * 初期化(クライアントモード)
  */
 void setup_client() {
@@ -74,6 +97,8 @@ void setup_client() {
 
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
+
+  http_get();
 }
 
 /**
