@@ -3,7 +3,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
 #include <FS.h>
-
+#include <ArduinoJson.h>
 
 // モード切り替えピン
 const int MODE_PIN = 0; // GPIO0
@@ -51,15 +51,31 @@ void handleRootPost() {
  * HTTPリクエスト（GET）
  */
 void http_get() {
+  
+  const int BUFFER_SIZE = JSON_OBJECT_SIZE(4) + JSON_ARRAY_SIZE(1);
+  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
+  
   HTTPClient http;
-  http.begin("http://weather.livedoor.com/forecast/webservice/json/v1?city=400040");
+  http.begin("http://api.fixer.io/latest?base=USD&symbols=JPY");
   int httpCode = http.GET();
   if(httpCode) {
       Serial.printf("[HTTP] GET... code: %d\n", httpCode);
 
       if(httpCode == 200) {
+
           String payload = http.getString();
           Serial.println(payload);
+          
+          /* JSONデコード */
+          char* json = new char[payload.length() + 1];
+          payload.toCharArray(json, payload.length() + 1);
+          JsonObject& root = jsonBuffer.parseObject(json);
+          if (!root.success()) {
+              Serial.println("parseObject() failed");
+          }
+
+          const char* date = root["date"];
+          Serial.println(date);
       }
   } else {
       Serial.printf("[HTTP] GET... failed, error: %d\n", httpCode);
@@ -127,6 +143,7 @@ void setup_server() {
  * 初期化
  */
 void setup() {
+
   Serial.begin(115200);
   Serial.println();
 
